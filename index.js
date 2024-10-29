@@ -15,6 +15,7 @@ const EASY_LEVEL_TURNS = 10;
 const HARD_LEVEL_TURNS = 5;
 let answer;
 let turns;
+let gameOver = false;
 
 //Click Run
 $(document).ready(function () {
@@ -39,13 +40,33 @@ function restart() {
 $(document).on("keydown", function (e) {
   var x = event.which || event.keyCode;
   if (x === 13 || x == 13) {
+    // Don't process input if game is over
+    if (gameOver) {
+      return;
+    }
+
     var consoleLine = $("#" + CurrentId + " input").val();
     inputValues.push({ id: CurrentId, val: consoleLine });
 
     if (inputValues.length > 1) {
+      // Don't process input if game is over
+      if (gameOver) {
+        return;
+      }
+
       const guess = Number(inputValues[inputValues.length - 1].val);
       if (guess != answer) {
         turns -= 1;
+
+        // Check turns BEFORE creating new prompts
+        if (turns <= 0) {
+          $(".console-carrot").remove();
+          NewLine(
+            "You've run out of guesses. Refresh the page to run again.",
+            false
+          );
+          return;
+        }
 
         if (guess < answer) {
           NewLine("Too low.", false);
@@ -56,6 +77,7 @@ $(document).on("keydown", function (e) {
         if (turns == 0) {
           $(".console-carrot").remove();
           NewLine("You've run out of guesses, you lose.", false);
+          gameOver = true;
           return;
         } else {
           NewLine("Guess again.", false);
