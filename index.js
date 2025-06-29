@@ -1,157 +1,109 @@
-//Current line
-var CurrentId = undefined;
+import * as art from './art.js';
+import * as functions from './functions.js';
 
-var inputValues = [];
-const inputPrompts = [];
-
-const logo = `
-  / _ \\_   _  ___  ___ ___  /__   \\ |__   ___    /\\ \\ \\_   _ _ __ ___ | |__   ___ _ __ 
- / /_\\/ | | |/ _ \\/ __/ __|   / /\\/ '_ \\ / _ \\  /  \\/ / | | | '_ ' _ \\| '_ \\ / _ \\ '__|
-/ /_\\\\| |_| |  __/\\__ \\__ \\  / /  | | | |  __/ / /\\  /| |_| | | | | | | |_) |  __/ |   
-\\____/ \\__,_|\\___||___/___/  \\/   |_| |_|\\___| \\_\\ \\/  \\__,_|_| |_| |_|_.__/ \\___|_|        
-`;
-
-const EASY_LEVEL_TURNS = 10;
-const HARD_LEVEL_TURNS = 5;
-let answer;
-let turns;
-let gameOver = false;
-
-//Click Run
-$(document).ready(function () {
-  $("#run-button").click(function () {
-    inputValues = [];
-    $("#Content").empty();
-    restart();
-  });
-});
-
-function restart() {
-  answer = Math.floor(Math.random() * 100 + 1);
-
-  NewLine(logo, false);
-  NewLine("Welcome to the Number Guessing Game!", false);
-  NewLine("I'm thinking of a number between 1 and 100.", false);
-  // NewLine(`Pssst, the correct answer is ${answer}`);
-  NewLine("Choose a difficulty. Type 'easy' or 'hard': ", true);
+function replay() {
+    const ask = prompt('Do you want to play again?\n')[0].toLowerCase();
+    return ask === 'y';
 }
 
-//Enter button
-$(document).on("keydown", function (e) {
-  var x = event.which || event.keyCode;
-  if (x === 13 || x == 13) {
-    // Don't process input if game is over
-    if (gameOver) {
-      return;
+function fullGame() {
+    console.clear();
+    console.log(art.logo2);
+
+    const listCards = [
+        ['Hearts', 'Ace'], ['Hearts', 2], ['Hearts', 3], ['Hearts', 4], ['Hearts', 5], 
+        ['Hearts', 6], ['Hearts', 7], ['Hearts', 8], ['Hearts', 9], ['Hearts', 10], 
+        ['Hearts', 'Jack'], ['Hearts', 'Queen'], ['Hearts', 'King'], 
+        ['Diamonds', 'Ace'], ['Diamonds', 2], ['Diamonds', 3], ['Diamonds', 4], 
+        ['Diamonds', 5], ['Diamonds', 6], ['Diamonds', 7], ['Diamonds', 8], 
+        ['Diamonds', 9], ['Diamonds', 10], ['Diamonds', 'Jack'], ['Diamonds', 'Queen'], 
+        ['Diamonds', 'King'], ['Spades', 'Ace'], ['Spades', 2], ['Spades', 3], 
+        ['Spades', 4], ['Spades', 5], ['Spades', 6], ['Spades', 7], ['Spades', 8], 
+        ['Spades', 9], ['Spades', 10], ['Spades', 'Jack'], ['Spades', 'Queen'], 
+        ['Spades', 'King'], ['Clubs', 'Ace'], ['Clubs', 2], ['Clubs', 3], 
+        ['Clubs', 4], ['Clubs', 5], ['Clubs', 6], ['Clubs', 7], ['Clubs', 8], 
+        ['Clubs', 9], ['Clubs', 10], ['Clubs', 'Jack'], ['Clubs', 'Queen'], 
+        ['Clubs', 'King']
+    ];
+    const gameDeck = listCards.sort(() => Math.random() - 0.5);
+
+    const hand1 = [];
+    const hand2 = [];
+
+    console.log('Welcome to Blackjack!');
+    for (let i = 0; i < 2; i++) {
+        functions.dealCardToHand(gameDeck, hand1);
+        functions.dealCardToHand(gameDeck, hand2);
     }
 
-    var consoleLine = $("#" + CurrentId + " input").val();
-    inputValues.push({ id: CurrentId, val: consoleLine });
+    function gameLoop() {
+        const score1 = functions.calculateHandScore(hand1);
+        const score2 = functions.calculateHandScore(hand2);
+        console.log('Player');
+        console.log(`Score: ${score1}`);
+        art.printCard(hand1);
 
-    if (inputValues.length > 1) {
-      // Don't process input if game is over
-      if (gameOver) {
-        return;
-      }
+        console.log('Dealer');
+        art.printFirst(hand2);
+    }
 
-      const guess = Number(inputValues[inputValues.length - 1].val);
-      if (guess != answer) {
-        turns -= 1;
+    function gameLoopFinal() {
+        const score1 = functions.calculateHandScore(hand1);
+        const score2 = functions.calculateHandScore(hand2);
+        console.log('Player');
+        console.log(`Score: ${score1}`);
+        art.printCard(hand1);
 
-        // Check turns BEFORE creating new prompts
-        if (turns <= 0) {
-          $(".console-carrot").remove();
-          NewLine(
-            "You've run out of guesses. Refresh the page to run again.",
-            false
-          );
-          return;
+        console.log('Dealer');
+        art.printCard(hand2);
+    }
+
+    gameLoop();
+    let hitStand = prompt('Hit or Stand: ')[0].toLowerCase();
+    while (hitStand === 'h') {
+        functions.dealCardToHand(gameDeck, hand1);
+        gameLoop();
+        hitStand = prompt('Hit or Stand: ')[0].toLowerCase();
+        if (hitStand === 's') {
+            break;
         }
+    }
 
-        if (guess < answer) {
-          NewLine("Too low.", false);
-        } else if (guess > answer) {
-          NewLine("Too high.", false);
-        }
+    gameLoop();
 
-        if (turns == 0) {
-          $(".console-carrot").remove();
-          NewLine("You've run out of guesses, you lose.", false);
-          gameOver = true;
-          return;
-        } else {
-          NewLine("Guess again.", false);
-        }
-      } else {
-        $(".console-carrot").remove();
-        NewLine(`You got it! The answer was ${answer}.`, false);
-        return;
-      }
+    const score1 = functions.calculateHandScore(hand1);
+    if (score1 > 21) {
+        console.log('Player is busted');
+    } else if (score1 === 21) {
+        console.log('Player hits a blackjack');
+    }
+
+    let score2 = functions.calculateHandScore(hand2);
+    while (score2 < 17) {
+        functions.dealCardToHand(gameDeck, hand2);
+        score2 = functions.calculateHandScore(hand2);
+    }
+
+    gameLoopFinal();
+    const finalScore1 = functions.calculateHandScore(hand1);
+    const finalScore2 = functions.calculateHandScore(hand2);
+    if (finalScore2 > 21) {
+        console.log('Dealer is busted');
+    } else if (finalScore2 === 21) {
+        console.log('Dealer hits a blackjack');
     } else {
-      if (inputValues[0].val.toLowerCase().trim() == "easy") {
-        turns = 10;
-      } else {
-        turns = 5;
-      }
+        if (finalScore1 > finalScore2) {
+            console.log('Player wins the hand');
+        } else if (finalScore1 < finalScore2) {
+            console.log('Dealer wins the hand');
+        } else {
+            console.log('Hand tied');
+        }
     }
-    NewLine(`You have ${turns} attempts remaining to guess the number.`);
-    NewLine("Make a guess: ", true);
-    // $(".console-carrot").remove();
-    // if (biddingShouldContinue) {
-    //   NewLine(inputPrompts[inputValues.length - 1], true);
-    // }
-  }
-});
-$(document).on("keydown", function (e) {
-  var x = event.which || event.keyCode;
-  var line = $("#" + CurrentId + " input");
-  var length = line.val().length;
-  if (x != 8) {
-    line.attr("size", 1 + length);
-  } else {
-    line.attr("size", length * 0.95);
-  }
-  if (length === 0) {
-    $("#" + CurrentId + " input").attr("size", "1");
-  }
-});
-$(document).on("click", function (e) {
-  $("#" + CurrentId + " input").focus();
-});
 
-//New line
-function NewLine(text, isPrompt) {
-  $(".console-carrot").remove();
-  if (CurrentId !== undefined) {
-    $("#" + CurrentId + " input").prop("disabled", true);
-  }
-  CurrentId = "consoleInput-" + GenerateId();
-
-  if (isPrompt) {
-    $("#Content").append(
-      //One Line
-      '<div id="' +
-        CurrentId +
-        '">' +
-        text +
-        '<input autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" type="text" class="terminal-input" /><div class="console-carrot"></div></div>'
-    );
-    $("#" + CurrentId + " input").focus();
-    $("#" + CurrentId + " input").attr("size", "1");
-  } else {
-    $("#Content").append('<div id="' + CurrentId + '">' + text + "</div>");
-  }
-  document.getElementById(CurrentId).scrollIntoView();
+    if (replay()) {
+        fullGame();
+    }
 }
 
-function GenerateId() {
-  return Math.random().toString(16).slice(2);
-}
-
-function shuffleArray(array) {
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
-  }
-  return array;
-}
+fullGame();
